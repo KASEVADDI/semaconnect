@@ -1,0 +1,94 @@
+pipeline {
+  agent any
+  stages {
+    stage('s7') {
+            steps {  
+            checkout([$class: 'GitSCM', branches: [[name: '*/develop']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '6cc06220-88d0-4b8a-b5ed-547ba10ccda5', url: 'git@bitbucket.org:semaconnect/semaconnect-manifest-sandbox.git']]])
+            sshagent(credentials: ['6cc06220-88d0-4b8a-b5ed-547ba10ccda5']) {
+            sh '''#!/bin/bash
+            mkdir -p ~/.bin
+            PATH="${HOME}/.bin:${PATH}"
+            curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
+            chmod a+rx ~/.bin/repo
+            repo init -u git@bitbucket.org:semaconnect/semaconnect-manifest-sandbox.git -b develop
+            repo sync -j8 --no-repo-verify
+            mkdir build-sema7
+            cd build-sema7
+            yes | source ../mkproject.sh -p ccimx6ul-sema7 -m meta-semaconnect
+            cp -r /mnt/disk1/yocto/digi-yocto-downloads /mnt/disk1/jenkinshome2/jenkins/workspace
+            ln -s /mnt/disk1/jenkinshome2/jenkins/workspace/digi-yocto-downloads downloads
+            source dey-setup-environment
+            bitbake dey-semaconnect-production-image
+            '''    
+            }
+
+       }
+
+  }
+stage('s4') {
+            steps { 
+            checkout([$class: 'GitSCM', branches: [[name: '*/develop']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '6cc06220-88d0-4b8a-b5ed-547ba10ccda5', url: 'git@bitbucket.org:semaconnect/semaconnect-manifest-sandbox.git']]])
+            sshagent(credentials: ['6cc06220-88d0-4b8a-b5ed-547ba10ccda5']) {
+            sh '''#!/bin/bash
+            mkdir -p ~/.bin
+            PATH="${HOME}/.bin:${PATH}"
+            curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
+            chmod a+rx ~/.bin/repo
+            repo init -u git@bitbucket.org:semaconnect/semaconnect-manifest-sandbox.git -b develop
+            repo sync -j8 --no-repo-verify
+            mkdir build-sema4
+            cd build-sema4
+            yes | source ../mkproject.sh -p ccimx6ul-sema4 -m meta-semaconnect
+            cp -r /mnt/disk1/yocto/digi-yocto-downloads /mnt/disk1/jenkinshome2/jenkins/workspace
+            ln -s /mnt/disk1/jenkinshome2/jenkins/workspace/digi-yocto-downloads downloads
+            source dey-setup-environment
+            bitbake dey-semaconnect-production-image
+            '''
+            }
+
+       }
+
+  }
+stage('s8') {
+            steps { 
+            checkout([$class: 'GitSCM', branches: [[name: '*/develop']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '6cc06220-88d0-4b8a-b5ed-547ba10ccda5', url: 'git@bitbucket.org:semaconnect/semaconnect-manifest-sandbox.git']]])
+            sshagent(credentials: ['6cc06220-88d0-4b8a-b5ed-547ba10ccda5']) {
+            sh '''#!/bin/bash
+            mkdir -p ~/.bin
+            PATH="${HOME}/.bin:${PATH}"
+            curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
+            chmod a+rx ~/.bin/repo
+            repo init -u git@bitbucket.org:semaconnect/semaconnect-manifest-sandbox.git -b develop
+            repo sync -j8 --no-repo-verify
+            mkdir build-sema8
+            cd build-sema8
+            yes | source ../mkproject.sh -p ccimx6ul-sema8 -m meta-semaconnect
+            cp -r /mnt/disk1/yocto/digi-yocto-downloads /mnt/disk1/jenkinshome2/jenkins/workspace
+            ln -s /mnt/disk1/jenkinshome2/jenkins/workspace/digi-yocto-downloads downloads
+            source dey-setup-environment
+            bitbake dey-semaconnect-qt-production-image
+            '''    
+            }
+
+       }
+
+  }
+
+  }
+post {
+      changed {
+          emailext (
+	    subject: "'${currentBuild.currentResult}': Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+	    body: """<p>'${currentBuild.currentResult}': Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
+		  <p>Check console output at &QUOT;<a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a>&QUOT;</p>""",
+	    recipientProviders: [culprits()],
+	    to: 'kasevaddi.m@semaconnect.com'
+
+          )
+
+    }   
+
+  }
+
+}
+
