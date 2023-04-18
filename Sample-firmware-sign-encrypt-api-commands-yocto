@@ -1,0 +1,47 @@
+1. Upload an OPEN Artifact to key server:
+
+
+
+
+curl -X POST \
+https://keysrv.semaconnect.com/keysrvops.php/fwfileupload \
+-H 'content-type: multipart/form-data' \
+-F fw_artifact=@/mnt/disk1/jenkinshome2/jenkins/workspace/cmake_2022.09.08_REL_SZ.0.0/build/test_main
+
+
+(NOTE: Calculate md5sum hash of the input file) command: md5sum zImage-ccimx6ul-sema7.bin
+--------------------------------
+2. Perform Post Processing on uploaded open artifact file:
+
+curl -X POST \
+https://keysrv.semaconnect.com/keysrvops.php/processfwartifact \
+-H 'Content-Type: application/json' \
+-d '{
+"id":"2345645",
+"mapped_id":"6",
+"file":"test_main",
+"hash":"6b237c838bbda31036ba8440ed1ead8a",
+"imagetype":"LINUX",
+"op_type":"SIGNENCRYPT"
+}'
+
+Reply:
+
+{ "status":true,
+"code":201,
+"errorcode":0,
+"message":"{\"id\":\"2345645\",\"mapped_id\":\"1\",\"file\":\"SIGNENCRYPT_2345645_6_zImage-ccimx6ul-sema6.bin\",\"hash\":\"aada14e63982071362dca2692bbdae31 firmware/SIGNENCRYPT_2345645_6_zImage-ccimx6ul-sema6.bin\",\"imagetype\":\"LINUX\",\"op_type\":\"SIGNENCRYPT\"}"
+}
+-----------------------------------------
+3. Download the post processed file:
+
+curl -O https://keysrv.semaconnect.com/keysrvops.php/filedownload/SIGNENCRYPT_2345645_6_test_main
+
+
+------------------------------------
+dont think below syntax
+
+-F fw_artifact=@/home/kasevaddi/test/zImage-ccimx6ul-sema7.bincurl -X POST \ https://keysrv.semaconnect.com/keysrvops.php/fwfileupload \ -H 'content-type: multipart/form-data' \ -F fw_artifact=@/home kasevaddi/test/zImage-ccimx6ul-sema7.bin
+
+ 
+
