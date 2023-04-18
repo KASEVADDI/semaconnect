@@ -1,0 +1,60 @@
+pipeline {
+  agent any
+	stages {
+	stage('Build Release') {                 
+		steps {
+		    dir('build') {
+		    script {
+		    gitTaggerName = sh "git for-each-ref refs/tags --sort=-taggerdate --format=' %(taggername)' --count=1"
+		    echo "${gitTaggerName}"
+		    }          
+		    writeFile file: 'logfile.txt', text: "PR Branch  :" + env.BRANCH_NAME +"\n" +
+		    "pull request author name :" + env.CHANGE_AUTHOR_DISPLAY_NAME +"\n" + 
+		    "PR target branch :"+ env.CHANGE_TARGET +"\n" +
+		    "PR source branch :" + env.CHANGE_BRANCH +"\n" + 
+		    "PR repo url :" + env.CHANGE_URL +"\n" + 
+		    "pull request author email :" + env.CHANGE_AUTHOR_EMAIL +"\n" + 
+		    "build number :" + env.BUILD_NUMBER +"\n" + 
+		    "Tag name :"+ env.TAG_NAME +"\n" + 
+		    "Tag timestamp :" + env.TAG_TIMESTAMP  +"\n" + 
+		    "tag unixtime :" + env.TAG_UNIXTIME +"\n" +
+		    "tag date :" + env.TAG_DATE +"\n" +
+		    "workspace name :" + env.WORKSPACE +"\n" +
+		    "jenkins home :" +env.JENKINS_HOME
+
+		  sh 'ls -l logfile.txt'
+		  sh 'cat logfile.txt'               
+		  sh 'cmake ..'
+		  sh 'make'
+		  sh 'cmake build .'
+		  }    
+		}    
+	} 
+	stage('Upload encrypt download articat to keyserver') {
+
+		 environment {  
+		   MY_MD5 = sh(script: "md5sum ${env.WORKSPACE}/build/test_main | cut -f 1 -d \" \"", returnStdout: true)  
+		}    
+		  steps {		
+			  script {
+			  sh """#!/bin/bash		          
+			  curl -X POST https://keysrv.semaconnect.com/keysrvops.php/fwfileupload -H 'content-type: multipart/form-data' -F fw_artifact=@/${env.WORKSPACE}/build/test_main 
+			  """
+ 			echo "$MY_MD5"
+			sh '''#!/bin/sh
+			   PATH=$PATH:/usr/bin/jq
+			  echo "$MY_MD5"
+			  json_req=$(echo {\\"id\\":2345645, \\"mapped_id\\":6, \\"file\\":\\"test_main\\", \\"hash\\":\\"$MY_MD5\\", \\"imagetype\\":\\"LINUX\\", \\"op_type\\":\\"SIGNENCRYPT\\"})
+			  json_res=$(curl --trace-ascii -  -v -X POST  https://keysrv.semaconnect.com/keysrvops.php/processfwartifact -H 'Content-Type: application/json'  --data "$json_req")
+			  encrypt_file_name=$(echo $json_res | jq -r ".message" | jq -r ".file")
+			  echo "$encrypt_file_name"
+			  $(curl -O "https://keysrv.semaconnect.com/keysrvops.php/filedownload/$encrypt_file_name")
+		         '''
+			 }
+		
+		
+      		 }
+       }
+	
+    }
+}
